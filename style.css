@@ -1,0 +1,36 @@
+h1 {
+    background-color: #216884;
+    color: #FFF;
+    height: 80px;
+    margin: 0px;
+    padding: 0px;
+    line-height: 80px;
+}
+
+body {
+    margin: auto;
+    padding: 0px;
+}
+
+#sidebar {
+    position: absolute;
+    left: 0px;
+    bottom: 0px;
+    width: 240px;
+    top: 80px;
+    background-color: #dbdbdb;
+}
+
+ul {
+    margin: 0px;
+    padding: 0px;
+}
+
+#main {
+    position: absolute;
+    left: 240px;
+    top: 80px;
+    bottom: 0px;
+    right: 0px;
+    padding: 30px;
+}
