@@ -1,10 +1,32 @@
-h1 {
-    background-color: #216884;
+.navbar {
     color: #FFF;
-    height: 80px;
     margin: 0px;
     padding: 0px;
-    line-height: 80px;
+    background: transparent;
+    border: none;
+}
+
+a.navbar-brand {
+    background-image: url("logo.png");
+    background-repeat: no-repeat;
+    width: 208px;
+    height: 29px;
+    margin: 0px;
+    background-size: 208px 29px;
+}
+
+@media
+only screen and (-webkit-min-device-pixel-ratio: 2),
+only screen and (   min--moz-device-pixel-ratio: 2),
+only screen and (     -o-min-device-pixel-ratio: 2/1),
+only screen and (        min-device-pixel-ratio: 2),
+only screen and (                min-resolution: 192dpi),
+only screen and (                min-resolution: 2dppx) {
+
+  a.navbar-brand {
+      background-image: url("logo@2x.png");
+  }
+
 }
 
 body {
@@ -12,25 +34,70 @@ body {
     padding: 0px;
 }
 
-#sidebar {
-    position: absolute;
-    left: 0px;
-    bottom: 0px;
-    width: 240px;
-    top: 80px;
-    background-color: #dbdbdb;
+div.container-fluid > div.navbar-header {
+    display: block;
+    clear:both;
+    float: none;
+    padding: 10px;
+    margin: 0px;
+    background-color: #216884;
+    border: none;
+    border-bottom: solid 1px #ccc;
 }
 
-ul {
+div.container-fluid > div.navbar-collapse {
+    background-color: #dbdbdb;
+    color: black;
     margin: 0px;
+
+    overflow: hidden;
+}
+
+@media
+only screen and (min-width: 992px) {
+    div.navbar-collapse {
+        width: 240px;
+        margin: 0px;
+        padding: 0px;
+        position: absolute;
+        left: 0px;
+        bottom: 0px;
+        top: 55px;
+        max-height: none;
+    }
+
+    .navbar {
+        position: static;
+    }
+
+    ul.navbar-nav > li {
+        display: block;
+        float: none;
+    }
+
+    div#main {
+        position: absolute;
+        top: 55px;
+        left: 240px;
+        right: 0px;
+        bottom: 0px;
+    }
+}
+
+a.navbar-brand {
+    margin: 0px !important;
+    height: 35px;
+    background-color: transparent;
+    color: transparent;
+    border: 0;
+    font: 0/0 a;
+    text-shadow: none;
+}
+
+nav.navbar > .container-fluid {
     padding: 0px;
 }
 
-#main {
-    position: absolute;
-    left: 240px;
-    top: 80px;
-    bottom: 0px;
-    right: 0px;
-    padding: 30px;
+button.navbar-toggle {
+    margin: 0px;
 }

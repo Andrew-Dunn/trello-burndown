@@ -3,9 +3,8 @@ require 'thread'
 
 $mtx = Mutex.new
 $cv = ConditionVariable.new
-$page = File.read("page.html")
-$script = File.read("app.js")
-$chartjs = File.read("Chart.min.js");
+$page = File.read("index.html")
+$script = File.read("burndown.js")
 spin = true
 
 class BurndownHandler
@@ -13,17 +12,20 @@ class BurndownHandler
     end
 
     def request_handler(request, response)
-        $page = File.read("page.html")
-        $script = File.read("app.js")
+        $page = File.read("index.html")
+        $script = File.read("burndown.js")
         if request.path == '/burndown.js' then
             response.body = $script
             response.header["Content-Type"] = "text/javascript"
-        elsif request.path == '/chart.js' then
-            response.body = $chartjs
-            response.header["Content-Type"] = "text/javascript"
         elsif request.path == '/style.css' then
             response.body = File.read("style.css")
-            response.header["Content-Type"] = "text/css" 
+            response.header["Content-Type"] = "text/css"
+        elsif request.path == '/logo.png' then
+            response.body = File.read("logo.png")
+            response.header["Content-Type"] = "image/png"
+        elsif request.path == '/logo@2x.png' then
+            response.body = File.read("logo@2x.png")
+            response.header["Content-Type"] = "image/png"
         else
             response.body = $page
             response.header["Content-Type"] = "text/html"
@@ -43,7 +45,7 @@ end
 
 th.run
 
-http = HttpServer.new(BurndownHandler.new, 8080)
+http = HttpServer.new(BurndownHandler.new, 8080, "0.0.0.0")
 http.start
 
 th.join

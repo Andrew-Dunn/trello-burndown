@@ -1,5 +1,8 @@
-$(document).ready(function() {
+google.load("visualization", "1", {packages:["corechart"]});
+google.setOnLoadCallback(function() {
 
+var chart;
+var chartOpts = null;
 // Credit to Douglas Crockford for this bind method
 if (!Function.prototype.bind) {
     Function.prototype.bind = function (oThis) {
@@ -86,6 +89,8 @@ var generateChart = function(info, due) {
 
         curves[i] = [];
 
+        uncomplete = {};
+
         for (var j = 0; j < info[i].actions.length; j++) {
             var action = info[i].actions[j];
             var date = new Date(action.date);
@@ -105,10 +110,24 @@ var generateChart = function(info, due) {
                 }
                 curves[i].push({"date": date, "left": left});
             } else if (action.type == "updateCheckItemStateOnCard") {
-                var name = action.data.checkItem.name;
-                var rep = name.replace(/.*\((\d) hours?\).*/i, "$1");
-                if (name != rep) {
-                    curves[i].push({"date": date, "left": -parseInt(rep)});
+                if (action.data.checkItem.state == "incomplete")
+                {
+                    uncomplete[action.data.checkItem.id] = true;
+                }
+                else
+                {
+                    if (uncomplete[action.data.checkItem.id] !== true)
+                    {
+                        var name = action.data.checkItem.name;
+                        var rep = name.replace(/.*\((\d) hours?\).*/i, "$1");
+                        if (name != rep) {
+                            curves[i].push({"date": date, "left": -parseInt(rep)});
+                        }
+                    }
+                    else
+                    {
+                        uncomplete[action.data.checkItem.id] = null;
+                    }
                 }
             }
         }
@@ -118,64 +137,67 @@ var generateChart = function(info, due) {
 
     var mainElem = $("#main");
 
-    var $canvas = $("<canvas>").attr("width", mainElem.width()).attr("height", mainElem.height()).appendTo("#main");
+    //var $canvas = $("<canvas>").attr("width", mainElem.width()).attr("height", mainElem.height()).appendTo("#main");
 
-    var context = $canvas.get(0).getContext("2d");
+    //var context = $canvas.get(0).getContext("2d");
 
-    var granularity = 100.0;
+    var granularity = 1000.0;
     var labelCount = 14;
     var labels = [];
     var delta = (due - start) / granularity;
-    var burndown = [];
-    var constant = [];
+    var burndown;
+    var constant;
     var now = new Date();
+
+    var data_array = [];
+    data_array.push(['Remaining Effort (Hours)',
+                     'Actual Remaining Effort',
+                     'Ideal Remaining Effort']);
+
     for (var i = 0; i < granularity; i++) {
         labels[i] = "";
-        constant[i] = (granularity - i) * (hours / granularity);
+        constant = hours * ((granularity -1 - i) / (granularity-1));
         var stamp = new Date(+start + (delta * i));
+
+        burndown = null;
         if (stamp < now) {
-            burndown[i] = 0;
+            burndown = 0;
             for (var j = 0; j < curves.length; j++) {
-                burndown[i] += interpolateProgress(curves[j], stamp)
+                burndown += interpolateProgress(curves[j], stamp)
             }
         }
+        data_array.push([(delta * i) / (1000 * 3600 * 24), burndown, constant]);
     }
 
-    console.log(start);
-    console.log(due);
+    var data = google.visualization.arrayToDataTable(data_array);
+    var hours_formatter = new google.visualization.NumberFormat({pattern:'#.# hours'});
+    var days_formatter = new google.visualization.NumberFormat({pattern:'# days'});
+    hours_formatter.format(data, 1);
+    hours_formatter.format(data, 2);
+    days_formatter.format(data, 0);
 
-    new Chart(context).Line(
-        {
-	"labels" : labels,
-	datasets : [
-		{
-			fillColor : "rgba(20,40,220,0.0)",
-			strokeColor : "rgba(20,20,160,1)",
-			pointColor : "rgba(220,220,220,1)",
-			pointStrokeColor : "#fff",
-			data : burndown
-		},
-		{
-			fillColor : "rgba(151,187,205,0.0)",
-			strokeColor : "rgba(255,40,40,1)",
-			pointColor : "rgba(151,187,205,1)",
-			pointStrokeColor : "#fff",
-			data : constant
-		}
-	]
-}
-    , {bezierCurve: false,
-    scaleOverride : true,
+    var options = {
+      title: 'Burndown Chart for Sprint',
+      hAxis: {
+          title: 'Sprint timeline (days)',
+          format:'# days'
+      },
+      vAxis: {
+          title: 'Remaining Effort (hours)',
+          maxValue: Math.ceil((due - start) / (1000 * 3600 * 24))
+      }
+    };
 
-	//** Required if scaleOverride is true **
-	//Number - The number of steps in a hard coded scale
-	scaleSteps : (hours/2) + 1,
-	//Number - The value jump in the hard coded scale
-	scaleStepWidth : 2,
-	//Number - The scale starting value
-	scaleStartValue : 0,
-pointDot: false})
+    chart = new google.visualization.LineChart(document.getElementById('main'));
+    chartOpts = {"data": data, "options": options};
+    chart.draw(data, options);
 }
+
+$( window ).resize(function() {
+    if (chartOpts !== null) {
+        chart.draw(chartOpts.data, chartOpts.options);
+    }
+});
 
 var processCards = function (cards) {
     var due = null;
@@ -220,8 +242,7 @@ var loadBoard = function (board) {
 }
 
 var loadBoardList = function () {
-    $("#control").empty();
-    $ul = $("<ul>");
+    $ul = $(".nav.navbar-nav");
     var orgs = {};
     Trello.get("members/me/organizations", function(organizations) {
         var li;
@@ -230,18 +251,20 @@ var loadBoardList = function () {
         {
             var org = organizations[i];
             li = $("<li>");
-            ul = $("<ul>");
-            li.text(org.displayName).appendTo($ul);
+            ul = $("<ul>").addClass("dropdown-menu");
+            li.html('<a href="#" class="dropdown-toggle" data-toggle="dropdown">' + org.displayName + '<b class="caret"></b></a>').appendTo($ul);
             ul.appendTo(li);
             orgs[org.id] = ul;
         }
 
         li = $("<li>");
-        ul = $("<ul>");
-        li.text("Personal").appendTo($ul);
+        ul = $("<ul>").addClass("dropdown-menu");
+        li.html('<a href="#" class="dropdown-toggle" data-toggle="dropdown">Personal<b class="caret"></b></a>').appendTo($ul);
         ul.appendTo(li);
 
-        Trello.get("members/me/boards", function(boards) {
+        Trello.get("members/me/boards", {
+            filter: "open"
+        },function(boards) {
             for (var i = 0; i < boards.length; i++)
             {
                 var board = boards[i];
@@ -259,8 +282,6 @@ var loadBoardList = function () {
                 li.appendTo(list);
             }
         });
-
-        $ul.appendTo("#control");
     });
 }
 
