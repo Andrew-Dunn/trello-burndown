@@ -79,7 +79,7 @@ var generateChart = function(info, due) {
         var card = info[i].card;
         var actions = info[i].actions;
 
-        var hasEstimate = card.desc.indexOf("Estimated Time: ");
+        var hasEstimate = card.desc.search(/estimated time: /i);
         var taskLen = 0;
         if (hasEstimate >= 0)
         {
@@ -236,6 +236,7 @@ var loadBoard = function (board) {
     return function () {
 
         Trello.get("boards/" + board.id + "/cards", function(cards) {
+            console.log(cards);
             processCards(cards);
         });
     }
